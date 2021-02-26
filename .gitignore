@@ -1,0 +1,10 @@
+*.json.fixed
+.cpcache
+*~
+.nrepl-*
+node_modules/
+out/
+target/
+package.json
+package-lock.json
+recipes.clj-exp

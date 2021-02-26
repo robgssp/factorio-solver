@@ -1,0 +1,55 @@
+* Clojure notes
+
+clojurescript:
+clj --main cljs.main
+
+Needs clojurescript as a dep, listed in deps.edn
+
+REPL connects to the browser! that's super cool.
+
+Run the test webserver with:
+
+> boot serve -d target watch reload cljs-repl cljs target
+
+*cringe*
+
+connect to the browser repl with 
+
+> boot repl -c
+>> (start-repl)
+
+* The JSON
+
+Raw export (from the factorio "Data Exporter to JSON" mod) in
+exported-recipes. These contain `inf`s, which clojure's json importer
+can't handle, so clean with clean.sh.  
+
+Convert the fixed json to clojure-formatted maps with
+
+clj src/solver/importer.clj
+
+* Project Managementurrrrrrrrg
+
+I should get set up with either lein or boot. boot looks promising.
+This is necessary for the Cider (clojure slime) tooling.
+
+* Recipes
+
+"Energy" is the time to craft
+
+Not all recipes have a "main-product"; exceptions are oil and nuclear
+processes. There are a few cases when .main_product.name doesn't match
+.name; this is mostly in solid fuel processing. For a first crack,
+.name can be assumed to be the recipe output.
+
+two unusual elements of "ingredients" entries: "fluidbox_index" and
+"catalyst_amount". They seem eminently ignorable.
+
+* TODO
+
+Functinality-wise, it's got some of the basics. Next things:
+
+- [ ] Show # of needed assemblers
+  - [ ] Allow picking assembler type
+  - [ ] Per-item
+- [ ] Search completion for the component box

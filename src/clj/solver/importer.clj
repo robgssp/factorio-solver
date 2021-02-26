@@ -1,5 +1,6 @@
 (ns solver.importer
-    (:require [clojure.data.json :as json]))
+  (:require [clojure.data.json :as json]
+            [clojure.pprint :refer [pprint]]))
 
 
 (def imports ["assembling-machine"
@@ -29,7 +30,9 @@
         (map (fn [import] [import (read-file (str "exported-recipes/" import ".json.fixed"))])
              imports)))
 
-(defn convert []
-  (clojure.pprint/pprint (read-files) (clojure.java.io/writer "recipes.clj-exp")))
-
-(convert)
+(defn -main []
+  (with-open [out (clojure.java.io/writer "src/cljs/solver/recipes.cljs")]
+    (pprint '(ns solver.recipes) out)
+    (pprint `(def ~(symbol "all") ~(read-files)) out)
+    (doseq [cat imports]
+      (pprint `(def ~(symbol cat) (get ~(symbol "all") ~cat)) out))))
