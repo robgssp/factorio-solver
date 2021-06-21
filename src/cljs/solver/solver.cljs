@@ -25,6 +25,27 @@
 (def recipes recipes/recipe)
 (def assembling-machines recipes/assembling-machine)
 
+;; producers: {"name" {:speed n, :categories #{cat}}, ...}
+(def producers
+  (merge (into (sorted-map)
+               (map (fn [[name
+                          {speed "crafting_speed",
+                           categories "crafting_categories"}]]
+                      [name {:speed speed, :categories (set (keys categories))}])
+                    recipes/assembling-machine))
+         (into (sorted-map)
+               (map (fn [[name
+                          {speed "crafting_speed",
+                           categories "crafting_categories"}]]
+                      [name {:speed speed, :categories (set (keys categories))}])
+                    recipes/furnace))
+         (into (sorted-map)
+               (map (fn [[name
+                          {speed "mining_speed",
+                           categories "resource_categories"}]]
+                      [name {:speed speed, :categories (set (keys categories))}])
+                    recipes/mining-drill))))
+
 ;; Recipes are handled by-name
 
 ;; recipe -> [{"type" type, "name" name, "amount" amount}]
@@ -49,8 +70,8 @@
 ;; config: {:bases #{recipe...} :best-assemblers [assembler...]}
 
 ;; recipe rate config -> {name rate, ...}
-(defn all-rates [recipe rate config]
-  (loop [unsatisfied {recipe rate},
+(defn all-rates [recipe config]
+  (loop [unsatisfied {recipe 1},
          satisfied (sorted-map)]
     (if (= unsatisfied {})
       satisfied
@@ -63,23 +84,31 @@
             (recur (merge-with + unsatisfied_ new-rates)
                    satisfied_)))))))
 
+(defn scale-rates [rates n]
+  (into (sorted-map)
+        (map (fn [[name rate]] [name (* rate n)])
+             rates)))
+
 (defn assembler-can-make? [asm recipe]
   (let [cat (get-in recipes [recipe "category"])]
-    (boolean (get-in assembling-machines [asm "crafting_categories" cat]))))
+    (boolean (get-in producers [asm :categories cat]))))
 
 ;; what assemblers can build this recipe?
 ;;
 ;; recipe -> (asms...)
 (defn assemblers-for [recipe]
   (filter (fn [asm] (assembler-can-make? asm recipe))
-          (keys assembling-machines)))
+          (keys producers)))
 
 (defn best-assembler [recipe config]
-  (loop [asms (config :best-assemblers)]
-    (cond (empty? asms) (first (assemblers-for recipe)),
-          (assembler-can-make? (first asms) recipe)
-          (first asms),
-          :else (recur (rest asms)))))
+  (or (first (filter #(assembler-can-make? % recipe) (config :best-assemblers)))
+      (first (assemblers-for recipe))))
+
+(defn time-for [recipe]
+  (get-in recipes [recipe "energy"]))
+
+(defn speed-of [asm]
+  (get-in producers [asm :speed]))
     
 ;; The assembler to use is decided by the recipe's `category`, to be
 ;; matched against the assembling-machine's available
@@ -87,8 +116,14 @@
 ;; the default will be decided by config.
 ;; 
 ;; {name rate, ...} config -> {name {:assembler asm, :count n}, ...}
-;; (defn analyze-rates [rates config]
-;;   (map (fn [[recipe rate]]
-;;          (let [asm (best-assembler recipe config)]
-;;            )
-;;        rates))
+(defn analyze-rates [rates config]
+  (into (sorted-map)
+        (map (fn [[recipe rate]]
+               (let [asm (best-assembler recipe config)
+                     rate-per-asm
+                     (/ (* (get-in recipes [recipe "main_product" "amount"])
+                           (speed-of asm))
+                        (time-for recipe))]
+                 [recipe {:assembler asm,
+                          :count (/ rate rate-per-asm)}]))
+             rates)))

@@ -18,6 +18,10 @@ connect to the browser repl with
 > boot repl -c
 >> (start-repl)
 
+* "Deployment"
+
+> nix-shell --run 'boot cljs -O simple target' && rsync -rv target/ 10.9.8.1:website/target
+
 * The JSON
 
 Raw export (from the factorio "Data Exporter to JSON" mod) in
@@ -45,6 +49,12 @@ processes. There are a few cases when .main_product.name doesn't match
 two unusual elements of "ingredients" entries: "fluidbox_index" and
 "catalyst_amount". They seem eminently ignorable.
 
+Damn. Things like copper plate are made by smelters, obvs, which are
+considered differently from copper ore. 
+
+I just need to handle ores specially, I think. Miners don't have the
+right properties set. 
+
 * TODO
 
 Functinality-wise, it's got some of the basics. Next things:
@@ -53,3 +63,6 @@ Functinality-wise, it's got some of the basics. Next things:
   - [ ] Allow picking assembler type
   - [ ] Per-item
 - [ ] Search completion for the component box
+
+what do I want to work on rn?
+
